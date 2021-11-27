@@ -20,7 +20,7 @@ void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keyp
     descriptors = Mat(0, 128, CV_32F);
     for (int tl = 1; tl < 6; tl++)
     {
-        double t = pow(2, 0.5 * tl);
+        double t = pow(sqrt(2), tl - 1); //modified
         for (int phi = 0; phi < 180; phi += 72.0 / t)
         {
             std::vector<KeyPoint> kps;
@@ -38,10 +38,10 @@ void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keyp
             imshow("Skew", img_disp);
             waitKey(0);
 #endif
-            Ptr<BRISK> ptrBrisk = BRISK::create();
-            ptrBrisk->detect(timg, kps, mask);
+            Ptr<BRISK> ptrBrisk = BRISK::create(); //added in
+            ptrBrisk->detect(timg, kps, mask); //added in
 
-            ptrBrisk->compute(timg, kps, desc);
+            ptrBrisk->compute(timg, kps, desc); //added in
 
             for (unsigned int i = 0; i < kps.size(); i++)
             {

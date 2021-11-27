@@ -45,15 +45,15 @@ int main(int argc, char* argv[])
 	//first image
 	Mat descriptors1;
 	vector<KeyPoint> keypoints1;
-	standardSIFT(my_image1, keypoints1, descriptors1);
-	//asd.detectAndCompute(my_image1, keypoints1, descriptors1); //asift
+	//standardSIFT(my_image1, keypoints1, descriptors1);
+	asd.detectAndCompute(my_image1, keypoints1, descriptors1); //asift
 	cout << "Keypoints for first image found" << endl;
 
 	//second image
 	Mat descriptors2;
 	vector<KeyPoint> keypoints2;
-	standardSIFT(my_image2, keypoints2, descriptors2);
-	//asd.detectAndCompute(my_image2, keypoints2, descriptors2); //asift
+	//standardSIFT(my_image2, keypoints2, descriptors2);
+	asd.detectAndCompute(my_image2, keypoints2, descriptors2); //asift
 	cout << "Keypoints for second image found\nPerforming matching..." << endl;
 
 	//match descriptors between images
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	sort(bestMatches.begin(), bestMatches.end());
-	int bestMatchesToDisplay = 50;
+	int bestMatchesToDisplay = 75;
 	cout << "Total Good Matches: " << bestMatches.size() << endl;
 	bestMatches = vector<DMatch>(bestMatches.begin(), bestMatches.begin() + bestMatchesToDisplay);
 
