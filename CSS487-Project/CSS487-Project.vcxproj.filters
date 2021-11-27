@@ -18,5 +18,21 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ASiftDetector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ASiftDetector.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="image1.png">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="image2.png">
+      <Filter>Source Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -144,6 +144,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ASiftDetector.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ASiftDetector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="image1.png" />
+    <Image Include="image2.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
