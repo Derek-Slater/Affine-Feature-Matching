@@ -2,20 +2,34 @@
 // 
 // Authors: Derek Slater, Shakeel Khan
 
+// STD imports.
+#include <iostream>
+#include <chrono>
+#include <cstdlib>
+#include <string>
+using namespace std;
+
+// OpenCV imports.
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 using namespace cv;
 
-#include "ASiftDetector.h"
+// Misc. imports.
+#include "ASiftDetector.h"		// ASIFT implementation.
 
-#include <iostream>
-using namespace std;
+// Constants.
+const string IMAGE_1_FILENAME = "image1.png";
+const string IMAGE_2_FILENAME = "image2.png";
 
-//standardSIFT: Performs the standard function of SIFT
-//Preconditions: image passed in is a Mat that represents a grayscale image
-//Postconditions: keypoints and descriptors will be filled in
-void standardSIFT(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors) {
+const int BEST_MATCHES_TO_DISPLAY = 75;
+
+const float DISTANCE_RATIO_THRESHOLD = 0.65f;
+
+// standardSIFT: Performs the standard function of SIFT.
+// Preconditions: image passed in is a Mat that represents a grayscale image.
+// Postconditions: keypoints and descriptors will be filled in.
+void SIFTDetectAndCompute(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors) {
 	Ptr<BRISK> ptrBrisk = BRISK::create();
 	ptrBrisk->detect(image, keypoints);
 	ptrBrisk->compute(image, keypoints, descriptors);
@@ -26,67 +40,80 @@ void standardSIFT(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptor
 // postconditions: 
 int main(int argc, char* argv[])
 {
-	//if (argc != 3)
-	//{
-	//	cout << " Need to give two image file paths" << endl; 
-	//	return -1;
-	//}
-	string image1 = "image1.png";
-	Mat my_image1; 
-	my_image1 = imread(image1, IMREAD_GRAYSCALE);
-	string image2 = "image2.png";
-	Mat my_image2;
-	my_image2 = imread(image2, IMREAD_GRAYSCALE);
-
+	// Load up the images.
+	Mat image1 = imread(IMAGE_1_FILENAME, IMREAD_GRAYSCALE);
+	Mat image2 = imread(IMAGE_2_FILENAME, IMREAD_GRAYSCALE);
 	
-	//find keypoints and descriptors using asift
+	// Find keypoints and descriptors using ASIFT.
 	ASiftDetector asd;
+	Mat descriptors1, descriptors2;
+	vector<KeyPoint> keypoints1, keypoints2;
 
-	//first image
-	Mat descriptors1;
-	vector<KeyPoint> keypoints1;
-	//standardSIFT(my_image1, keypoints1, descriptors1);
-	asd.detectAndCompute(my_image1, keypoints1, descriptors1); //asift
-	cout << "Keypoints for first image found" << endl;
+	// First image.
+	auto startTime = chrono::high_resolution_clock::now();
+	SIFTDetectAndCompute(image1, keypoints1, descriptors1);
+	//asd.detectAndCompute(image1, keypoints1, descriptors1);		// ASIFT.
+	auto endTime = chrono::high_resolution_clock::now();
+	auto time = endTime - startTime;
+	cout << "Keypoints for first image found ("
+			<< time / chrono::milliseconds(1) << " ms)" << endl;
 
-	//second image
-	Mat descriptors2;
-	vector<KeyPoint> keypoints2;
-	//standardSIFT(my_image2, keypoints2, descriptors2);
-	asd.detectAndCompute(my_image2, keypoints2, descriptors2); //asift
-	cout << "Keypoints for second image found\nPerforming matching..." << endl;
-
-	//match descriptors between images
-	BFMatcher bfm = BFMatcher(NORM_L1);
+	// Second image.
+	startTime = chrono::high_resolution_clock::now();
+	SIFTDetectAndCompute(image2, keypoints2, descriptors2);
+	//asd.detectAndCompute(image2, keypoints2, descriptors2);		// ASIFT.
+	endTime = chrono::high_resolution_clock::now();
+	time = endTime - startTime;
+	cout << "Keypoints for second image found ("
+		<< time / chrono::milliseconds(1) << " ms)" << endl;
+	cout << "Performing matching..." << endl;
+	
+	// Match descriptors between images.
+	BFMatcher bfm = BFMatcher(NORM_HAMMING);
 	vector<vector<DMatch>> matches;
-	bfm.knnMatch(descriptors1, descriptors2, matches, 2);
 	vector<DMatch> bestMatches;
-	//get best matches
+
+	startTime = chrono::high_resolution_clock::now();
+	bfm.knnMatch(descriptors1, descriptors2, matches, 2);
+	endTime = chrono::high_resolution_clock::now();
+	time = endTime - startTime;
+	cout << "Found " << matches.size() << " matches("
+			<< time / chrono::milliseconds(1) << " ms)" << endl;
+
+	// Extract the best matches.
+	startTime = chrono::high_resolution_clock::now();
 	for (int i = 0; i < matches.size(); i++) {
-		if (matches[i][0].distance > matches[i][1].distance * 0.5f) {
+		float distanceRatio = matches[i][0].distance / matches[i][1].distance;
+		if (distanceRatio <= DISTANCE_RATIO_THRESHOLD) {
 			bestMatches.push_back(matches[i][0]);
 		}
 	}
+	endTime = chrono::high_resolution_clock::now();
+	time = endTime - startTime;
+	cout << "# of Good Matches Found: "  << bestMatches.size() << " ("
+			<< time / chrono::milliseconds(1) << " ms)" << endl;
+
+	// Choose the 75 best matches.
 	sort(bestMatches.begin(), bestMatches.end());
-	int bestMatchesToDisplay = 75;
-	cout << "Total Good Matches: " << bestMatches.size() << endl;
-	bestMatches = vector<DMatch>(bestMatches.begin(), bestMatches.begin() + bestMatchesToDisplay);
+	vector<DMatch>::iterator end = bestMatches.end();
+	if (bestMatches.size() > BEST_MATCHES_TO_DISPLAY)
+	{
+		end = bestMatches.begin() + BEST_MATCHES_TO_DISPLAY;
+	}
+	bestMatches = vector<DMatch>(bestMatches.begin(), end);
 
-	//display keypoints found
-	//Mat keypointImage1;
-	//drawKeypoints(my_image1, keypoints1, keypointImage1);
-	//namedWindow("myoutput", WINDOW_NORMAL);
-	//imshow("myoutput", keypointImage1);
-
-	//draw the matches between the images and display them
+	// Draw the matches between the images and display them.
 	Mat matchesImage;
-	drawMatches(my_image1, keypoints1, my_image2, keypoints2, bestMatches, matchesImage, 
-				Scalar::all(-1), 1, vector< char >(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-	namedWindow("myoutput");
+	drawMatches(image1, keypoints1,
+				image2, keypoints2,
+				bestMatches, matchesImage, 
+				Scalar::all(-1), 1, vector< char >(),
+				DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 	imshow("myoutput", matchesImage);
-	imwrite("matches.png", matchesImage);
 	waitKey(0);
-	destroyAllWindows();
 
-	return 0;
+	// Save the result.
+	imwrite("matches.png", matchesImage);
+
+	return EXIT_SUCCESS;
 }

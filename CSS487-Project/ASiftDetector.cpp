@@ -9,10 +9,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-ASiftDetector::ASiftDetector()
-{
-
-}
+ASiftDetector::ASiftDetector() { }
 
 void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keypoints, Mat& descriptors)
 {
@@ -30,7 +27,6 @@ void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keyp
             img.copyTo(timg);
 
             affineSkew(t, phi, timg, mask, Ai);
-
 #if 0
             Mat img_disp;
             bitwise_and(mask, timg, img_disp);
@@ -38,6 +34,7 @@ void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keyp
             imshow("Skew", img_disp);
             waitKey(0);
 #endif
+
             Ptr<BRISK> ptrBrisk = BRISK::create(); //added in
             ptrBrisk->detect(timg, kps, mask); //added in
 
@@ -88,6 +85,7 @@ void ASiftDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat
 
         warpAffine(img, img, A, Size(rect.width, rect.height), INTER_LINEAR, BORDER_REPLICATE);
     }
+
     if (tilt != 1.0)
     {
         double s = 0.8 * sqrt(tilt * tilt - 1);
@@ -95,11 +93,13 @@ void ASiftDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat
         resize(img, img, Size(0, 0), 1.0 / tilt, 1.0, INTER_NEAREST);
         A.row(0) = A.row(0) / tilt;
     }
+
     if (tilt != 1.0 || phi != 0.0)
     {
         h = img.rows;
         w = img.cols;
         warpAffine(mask, mask, A, Size(w, h), INTER_NEAREST);
     }
+
     invertAffineTransform(A, Ai);
 }
