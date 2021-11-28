@@ -6,11 +6,11 @@ using namespace cv;
 
 class ASiftDetector
 {
-public:
-	ASiftDetector();
+	public:
+		ASiftDetector();
 
-	void detectAndCompute(const Mat& img, std::vector< KeyPoint >& keypoints, Mat& descriptors);
+		void detectAndCompute(const Mat& img, std::vector< KeyPoint >& keypoints, Mat& descriptors);
 
-private:
-	void affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai);
+	private:
+		void affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai);
 };
