@@ -24,20 +24,20 @@ const string IMAGE_2_FILENAME = "image2.png";
 
 const int BEST_MATCHES_TO_DISPLAY = 75;
 
-const float DISTANCE_RATIO_THRESHOLD = 0.65f;
+const float DISTANCE_RATIO_THRESHOLD = 0.7f;
 
-// standardSIFT: Performs the standard function of SIFT.
-// Preconditions: image passed in is a Mat that represents a grayscale image.
-// Postconditions: keypoints and descriptors will be filled in.
-void SIFTDetectAndCompute(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors) {
+// BRISKDetectAndCompute: Performs keypoint detection and descriptor calculation via BRISK.
+// Preconditions: Image passed in is a Mat that represents a grayscale image.
+// Postconditions: Keypoints and descriptors will be filled in.
+void BRISKDetectAndCompute(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors) {
 	Ptr<BRISK> ptrBrisk = BRISK::create();
 	ptrBrisk->detect(image, keypoints);
 	ptrBrisk->compute(image, keypoints, descriptors);
 }
 
 // main:
-// preconditions: 
-// postconditions: 
+// Preconditions: 
+// Postconditions: 
 int main(int argc, char* argv[])
 {
 	// Load up the images.
@@ -51,8 +51,8 @@ int main(int argc, char* argv[])
 
 	// First image.
 	auto startTime = chrono::high_resolution_clock::now();
-	SIFTDetectAndCompute(image1, keypoints1, descriptors1);
-	//asd.detectAndCompute(image1, keypoints1, descriptors1);		// ASIFT.
+	//BRISKDetectAndCompute(image1, keypoints1, descriptors1);
+	asd.detectAndCompute(image1, keypoints1, descriptors1);		// ASIFT.
 	auto endTime = chrono::high_resolution_clock::now();
 	auto time = endTime - startTime;
 	cout << "Keypoints for first image found ("
@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
 
 	// Second image.
 	startTime = chrono::high_resolution_clock::now();
-	SIFTDetectAndCompute(image2, keypoints2, descriptors2);
-	//asd.detectAndCompute(image2, keypoints2, descriptors2);		// ASIFT.
+	//BRISKDetectAndCompute(image2, keypoints2, descriptors2);
+	asd.detectAndCompute(image2, keypoints2, descriptors2);		// ASIFT.
 	endTime = chrono::high_resolution_clock::now();
 	time = endTime - startTime;
 	cout << "Keypoints for second image found ("
@@ -69,18 +69,21 @@ int main(int argc, char* argv[])
 	cout << "Performing matching..." << endl;
 	
 	// Match descriptors between images.
-	BFMatcher bfm = BFMatcher(NORM_HAMMING);
+	FlannBasedMatcher matcher;
+	//BFMatcher matcher = BFMatcher(NORM_HAMMING);
 	vector<vector<DMatch>> matches;
 	vector<DMatch> bestMatches;
 
+	descriptors1.convertTo(descriptors1, CV_32F);				// Convert to CV_32F to work with FLANN.
+	descriptors2.convertTo(descriptors2, CV_32F);				// Convert to CV_32F to work with FLANN.
 	startTime = chrono::high_resolution_clock::now();
-	bfm.knnMatch(descriptors1, descriptors2, matches, 2);
+	matcher.knnMatch(descriptors1, descriptors2, matches, 2);
 	endTime = chrono::high_resolution_clock::now();
 	time = endTime - startTime;
 	cout << "Found " << matches.size() << " matches("
 			<< time / chrono::milliseconds(1) << " ms)" << endl;
 
-	// Extract the best matches.
+	// Extract the best matches using Lowe's ratio test.
 	startTime = chrono::high_resolution_clock::now();
 	for (int i = 0; i < matches.size(); i++) {
 		float distanceRatio = matches[i][0].distance / matches[i][1].distance;

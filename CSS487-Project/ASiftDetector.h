@@ -1,7 +1,12 @@
+// ASiftDetector.h
+// Author: Matt Sheckells, from http://www.mattsheckells.com/opencv-asift-c-implementation/
+
+// STD imports.
 #include <vector>
+
+// OpenCV imports.
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d.hpp>
-
 using namespace cv;
 
 class ASiftDetector

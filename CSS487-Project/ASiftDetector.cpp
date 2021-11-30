@@ -1,13 +1,20 @@
+// ASiftDetector.cpp
+// Author: Matt Sheckells, from http://www.mattsheckells.com/opencv-asift-c-implementation/
+// Modified by: Derek Slater, Shakeel Khan
+
+// Misc. imports.
 #include "ASiftDetector.h"
 
+// STD imports.
 #include <iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
+// OpenCV imports.
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 ASiftDetector::ASiftDetector() { }
 
@@ -17,7 +24,7 @@ void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keyp
     descriptors = Mat(0, 128, CV_32F);
     for (int tl = 1; tl < 6; tl++)
     {
-        double t = pow(sqrt(2), tl - 1); //modified
+        double t = pow(sqrt(2), tl - 1);
         for (int phi = 0; phi < 180; phi += 72.0 / t)
         {
             std::vector<KeyPoint> kps;
@@ -35,10 +42,10 @@ void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keyp
             waitKey(0);
 #endif
 
-            Ptr<BRISK> ptrBrisk = BRISK::create(); //added in
-            ptrBrisk->detect(timg, kps, mask); //added in
+            Ptr<BRISK> ptrBrisk = BRISK::create();
+            ptrBrisk->detect(timg, kps, mask);
 
-            ptrBrisk->compute(timg, kps, desc); //added in
+            ptrBrisk->compute(timg, kps, desc);
 
             for (unsigned int i = 0; i < kps.size(); i++)
             {
