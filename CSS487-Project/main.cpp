@@ -84,17 +84,21 @@ int main(int argc, char* argv[])
 			<< time / chrono::milliseconds(1) << " ms)" << endl;
 
 	// Extract the best matches using Lowe's ratio test.
+	float ratioSum = 0;
 	startTime = chrono::high_resolution_clock::now();
 	for (int i = 0; i < matches.size(); i++) {
 		float distanceRatio = matches[i][0].distance / matches[i][1].distance;
 		if (distanceRatio <= DISTANCE_RATIO_THRESHOLD) {
 			bestMatches.push_back(matches[i][0]);
+			ratioSum += distanceRatio;
 		}
 	}
 	endTime = chrono::high_resolution_clock::now();
 	time = endTime - startTime;
 	cout << "# of Good Matches Found: "  << bestMatches.size() << " ("
 			<< time / chrono::milliseconds(1) << " ms)" << endl;
+	float averageRatio = ratioSum / bestMatches.size();
+	cout << "Average distance ratio among good matches: " << averageRatio << endl;
 
 	// Choose the 75 best matches.
 	sort(bestMatches.begin(), bestMatches.end());
