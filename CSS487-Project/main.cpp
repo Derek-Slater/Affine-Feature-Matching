@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
 	// Simple error checking.
 	if (image1.data == NULL || image2.data == NULL) {
 		cout << "One of the two image strings are either invalid or don't exist" << endl;
+		return 0;
 	}
 	
 	// Find keypoints and descriptors using ASIFT.
