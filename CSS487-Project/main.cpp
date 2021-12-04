@@ -39,7 +39,7 @@ void BRISKDetectAndCompute(const Mat& image, vector<KeyPoint>& keypoints, Mat& d
 // Preconditions: vector<vector<DMatch>> matches contains matches between images.
 // Postconditions: the best matches from matches will be pushed into bestMatches,
 // and the ratioSum will contain the sum of all the distance ratios between matches.
-void extractBestMatches(const vector<vector<DMatch>>& matches, vector<DMatch> &bestMatches, float ratioSum) {
+void extractBestMatches(const vector<vector<DMatch>>& matches, vector<DMatch> &bestMatches, float &ratioSum) {
 	for (int i = 0; i < matches.size(); i++) {
 		float distanceRatio = matches[i][0].distance / matches[i][1].distance;
 		if (distanceRatio <= DISTANCE_RATIO_THRESHOLD) {
