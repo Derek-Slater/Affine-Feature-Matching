@@ -19,8 +19,8 @@ using namespace cv;
 #include "ASiftDetector.h"		// ASIFT implementation.
 
 // Constants.
-const string IMAGE_1_FILENAME = "image9.png";
-const string IMAGE_2_FILENAME = "image10.png";
+const string IMAGE_1_FILENAME = "image1.png";
+const string IMAGE_2_FILENAME = "image2.png";
 
 const int BEST_MATCHES_TO_DISPLAY = 75;
 

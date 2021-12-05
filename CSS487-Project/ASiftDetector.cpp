@@ -9,6 +9,9 @@
 #include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <thread>
+
+using namespace std;
 
 // OpenCV imports.
 #include <opencv2/features2d.hpp>
@@ -18,45 +21,61 @@
 
 ASiftDetector::ASiftDetector() { }
 
-void ASiftDetector::detectAndCompute(const Mat& img, std::vector<KeyPoint>& keypoints, Mat& descriptors)
+void ASiftDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors)
 {
     keypoints.clear();
     descriptors = Mat(0, 128, CV_32F);
+    thread threads[5];
     for (int tl = 1; tl < 6; tl++)
     {
-        double t = pow(sqrt(2), tl - 1);
-        for (int phi = 0; phi < 180; phi += 72.0 / t)
-        {
-            std::vector<KeyPoint> kps;
-            Mat desc;
+        threads[tl - 1] = thread(&ASiftDetector::compute, this, tl, cref(img), ref(keypoints), ref(descriptors));
+    }
 
-            Mat timg, mask, Ai;
-            img.copyTo(timg);
+    for (int i = 0; i < 5; i++)
+    {
+        threads[i].join();
+    }
+}
 
-            affineSkew(t, phi, timg, mask, Ai);
+void ASiftDetector::compute(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
+{
+    double t = pow(sqrt(2), tl - 1);
+    for (int phi = 0; phi < 180; phi += 72.0 / t)
+    {
+        vector<KeyPoint> kps;
+        Mat desc;
+
+        Mat timg, mask, Ai;
+        img.copyTo(timg);
+
+        affineSkew(t, phi, timg, mask, Ai);
 #if 0
-            Mat img_disp;
-            bitwise_and(mask, timg, img_disp);
-            namedWindow("Skew", WINDOW_AUTOSIZE);// Create a window for display.
-            imshow("Skew", img_disp);
-            waitKey(0);
+        Mat img_disp;
+        bitwise_and(mask, timg, img_disp);
+        namedWindow("Skew", WINDOW_AUTOSIZE);// Create a window for display.
+        imshow("Skew", img_disp);
+        waitKey(0);
 #endif
 
-            Ptr<BRISK> ptrBrisk = BRISK::create();
-            ptrBrisk->detect(timg, kps, mask);
+        Ptr<BRISK> ptrBrisk = BRISK::create();
+        ptrBrisk->detect(timg, kps, mask);
 
-            ptrBrisk->compute(timg, kps, desc);
+        ptrBrisk->compute(timg, kps, desc);
 
-            for (unsigned int i = 0; i < kps.size(); i++)
-            {
-                Point3f kpt(kps[i].pt.x, kps[i].pt.y, 1);
-                Mat kpt_t = Ai * Mat(kpt);
-                kps[i].pt.x = kpt_t.at<float>(0, 0);
-                kps[i].pt.y = kpt_t.at<float>(1, 0);
-            }
-            keypoints.insert(keypoints.end(), kps.begin(), kps.end());
-            descriptors.push_back(desc);
+        for (unsigned int i = 0; i < kps.size(); i++)
+        {
+            Point3f kpt(kps[i].pt.x, kps[i].pt.y, 1);
+            Mat kpt_t = Ai * Mat(kpt);
+            kps[i].pt.x = kpt_t.at<float>(0, 0);
+            kps[i].pt.y = kpt_t.at<float>(1, 0);
         }
+        km.lock();
+        keypoints.insert(keypoints.end(), kps.begin(), kps.end());
+        km.unlock();
+
+        dm.lock();
+        descriptors.push_back(desc);
+        dm.unlock();
     }
 }
 
@@ -82,7 +101,7 @@ void ASiftDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat
         Mat tcorners_x, tcorners_y;
         tcorners.col(0).copyTo(tcorners_x);
         tcorners.col(1).copyTo(tcorners_y);
-        std::vector<Mat> channels;
+        vector<Mat> channels;
         channels.push_back(tcorners_x);
         channels.push_back(tcorners_y);
         merge(channels, tcorners);
