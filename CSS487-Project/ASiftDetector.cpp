@@ -25,19 +25,19 @@ void ASiftDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints
 {
     keypoints.clear();
     descriptors = Mat(0, 128, CV_32F);
-    thread threads[5];
+    thread threads[NUM_THREADS];
     for (int tl = 1; tl < 6; tl++)
     {
-        threads[tl - 1] = thread(&ASiftDetector::compute, this, tl, cref(img), ref(keypoints), ref(descriptors));
+        threads[tl - 1] = thread(&ASiftDetector::computeTask, this, tl, cref(img), ref(keypoints), ref(descriptors));
     }
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < NUM_THREADS; i++)
     {
         threads[i].join();
     }
 }
 
-void ASiftDetector::compute(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
+void ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
 {
     double t = pow(sqrt(2), tl - 1);
     for (int phi = 0; phi < 180; phi += 72.0 / t)
@@ -69,13 +69,13 @@ void ASiftDetector::compute(int tl, const Mat &img, vector<KeyPoint> &keypoints,
             kps[i].pt.x = kpt_t.at<float>(0, 0);
             kps[i].pt.y = kpt_t.at<float>(1, 0);
         }
-        km.lock();
+        keypointsMutex.lock();
         keypoints.insert(keypoints.end(), kps.begin(), kps.end());
-        km.unlock();
+        keypointsMutex.unlock();
 
-        dm.lock();
+        descriptorsMutex.lock();
         descriptors.push_back(desc);
-        dm.unlock();
+        descriptorsMutex.unlock();
     }
 }
 
