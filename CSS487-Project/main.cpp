@@ -11,6 +11,7 @@ using namespace std;
 
 // OpenCV imports.
 #include <opencv2/core.hpp>
+#include <opencv2/core/utils/logger.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 using namespace cv;
@@ -25,6 +26,8 @@ const string IMAGE_2_FILENAME = "image2.png";
 const int BEST_MATCHES_TO_DISPLAY = 75;
 
 const float DISTANCE_RATIO_THRESHOLD = 0.7f;
+
+ASiftDetector asd;
 
 // BRISKDetectAndCompute: Performs keypoint detection and descriptor calculation via BRISK.
 // Preconditions: Image passed in is a Mat that represents a grayscale image.
@@ -61,58 +64,86 @@ void trimBestMatches(vector<DMatch>& bestMatches) {
 	bestMatches = vector<DMatch>(bestMatches.begin(), end);
 }
 
-// main:
-// Preconditions: 
-// Postconditions: 
-int main(int argc, char* argv[])
+auto findKeypoints(const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors, bool abrisk)
 {
-	// Load up the images.
-	Mat image1 = imread(IMAGE_1_FILENAME, IMREAD_GRAYSCALE);
-	Mat image2 = imread(IMAGE_2_FILENAME, IMREAD_GRAYSCALE);
-
-	// Simple error checking.
-	if (image1.data == NULL || image2.data == NULL) {
-		cout << "One of the two image strings are either invalid or don't exist" << endl;
-		return 0;
+	if (abrisk)
+	{
+		asd.detectAndCompute(img, keypoints, descriptors);
 	}
-	
-	// Find keypoints and descriptors using ASIFT.
-	ASiftDetector asd;
+	else
+	{
+		BRISKDetectAndCompute(img, keypoints, descriptors);
+	}
+}
+
+auto matchDescriptors(Mat &descriptors1, Mat &descriptors2,
+					vector<vector<DMatch>> &matches,
+					bool bruteforce)
+{
+	if (bruteforce)
+	{
+		BFMatcher matcher = BFMatcher(NORM_HAMMING);
+		matcher.knnMatch(descriptors1, descriptors2, matches, 2);
+	}
+	else
+	{
+		FlannBasedMatcher matcher;
+		descriptors1.convertTo(descriptors1, CV_32F);		// Convert to CV_32F to work with FLANN.
+		descriptors2.convertTo(descriptors2, CV_32F);		// Convert to CV_32F to work with FLANN.
+		matcher.knnMatch(descriptors1, descriptors2, matches, 2);
+	}
+}
+
+void saveAndShow(const Mat &image1, const vector<KeyPoint> keypoints1,
+				const Mat& image2, const vector<KeyPoint> keypoints2,
+				const vector<DMatch> matches,
+				string filename)
+{
+	// Show the matches.
+	Mat matchesImage;
+	drawMatches(image1, keypoints1,
+		image2, keypoints2,
+		matches, matchesImage,
+		Scalar::all(-1), 1, vector< char >(),
+		DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+	imshow("myoutput", matchesImage);
+	waitKey(0);
+
+	// Save it.
+	imwrite(filename, matchesImage);
+}
+
+void findAndMatchKeypoints(const Mat& image1, const Mat& image2, bool abrisk, bool bruteforce, string filename)
+{
+	// Find keypoints and descriptors.
 	Mat descriptors1, descriptors2;
 	vector<KeyPoint> keypoints1, keypoints2;
 
 	// First image.
 	auto startTime = chrono::high_resolution_clock::now();
-	//BRISKDetectAndCompute(image1, keypoints1, descriptors1);
-	asd.detectAndCompute(image1, keypoints1, descriptors1);		// ASIFT.
+	findKeypoints(image1, keypoints1, descriptors1, abrisk);
 	auto endTime = chrono::high_resolution_clock::now();
 	auto time = endTime - startTime;
 	cout << keypoints1.size() << " Keypoints for first image found ("
-			<< time / chrono::milliseconds(1) << " ms)" << endl;
+		<< time / chrono::milliseconds(1) << " ms)" << endl;
 
 	// Second image.
 	startTime = chrono::high_resolution_clock::now();
-	//BRISKDetectAndCompute(image2, keypoints2, descriptors2);
-	asd.detectAndCompute(image2, keypoints2, descriptors2);		// ASIFT.
+	findKeypoints(image2, keypoints2, descriptors2, abrisk);
 	endTime = chrono::high_resolution_clock::now();
 	time = endTime - startTime;
 	cout << keypoints2.size() << " Keypoints for second image found ("
 		<< time / chrono::milliseconds(1) << " ms)" << endl;
 	cout << "Performing matching..." << endl;
-	
-	// Match descriptors between images.
-	FlannBasedMatcher matcher;
-	//BFMatcher matcher = BFMatcher(NORM_HAMMING);
-	vector<vector<DMatch>> matches;
 
-	descriptors1.convertTo(descriptors1, CV_32F);				// Convert to CV_32F to work with FLANN.
-	descriptors2.convertTo(descriptors2, CV_32F);				// Convert to CV_32F to work with FLANN.
+	// Match descriptors between images.
+	vector<vector<DMatch>> matches;
 	startTime = chrono::high_resolution_clock::now();
-	matcher.knnMatch(descriptors1, descriptors2, matches, 2);
+	matchDescriptors(descriptors1, descriptors2, matches, bruteforce);
 	endTime = chrono::high_resolution_clock::now();
 	time = endTime - startTime;
 	cout << "Found " << matches.size() << " matches("
-			<< time / chrono::milliseconds(1) << " ms)" << endl;
+		<< time / chrono::milliseconds(1) << " ms)" << endl;
 
 	// Extract the best matches using Lowe's ratio test.
 	vector<DMatch> bestMatches;
@@ -121,8 +152,8 @@ int main(int argc, char* argv[])
 	extractBestMatches(matches, bestMatches, ratioSum);
 	endTime = chrono::high_resolution_clock::now();
 	time = endTime - startTime;
-	cout << "# of Good Matches Found: "  << bestMatches.size() << " ("
-			<< time / chrono::milliseconds(1) << " ms)" << endl;
+	cout << "# of Good Matches Found: " << bestMatches.size() << " ("
+		<< time / chrono::milliseconds(1) << " ms)" << endl;
 	float averageRatio = ratioSum / bestMatches.size();
 	cout << "Average distance ratio among good matches: " << averageRatio << endl;
 
@@ -130,17 +161,32 @@ int main(int argc, char* argv[])
 	trimBestMatches(bestMatches);
 
 	// Draw the matches between the images and display them.
-	Mat matchesImage;
-	drawMatches(image1, keypoints1,
-				image2, keypoints2,
-				bestMatches, matchesImage, 
-				Scalar::all(-1), 1, vector< char >(),
-				DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-	imshow("myoutput", matchesImage);
-	waitKey(0);
+	saveAndShow(image1, keypoints1, image2, keypoints2, bestMatches, filename);
+}
 
-	// Save the result.
-	imwrite("matches.png", matchesImage);
+// main:
+// Preconditions: 
+// Postconditions: 
+int main(int argc, char* argv[])
+{
+	// This removes the logging messages from the terminal.
+	utils::logging::setLogLevel(utils::logging::LogLevel::LOG_LEVEL_SILENT);
+
+	// Load up the images.
+	Mat image1 = imread(IMAGE_1_FILENAME, IMREAD_GRAYSCALE);
+	Mat image2 = imread(IMAGE_2_FILENAME, IMREAD_GRAYSCALE);
+
+	// Simple error checking.
+	if (image1.data == NULL || image2.data == NULL) {
+		cout << "One of the two image strings are either invalid or don't exist" << endl;
+		return EXIT_FAILURE;
+	}
+	
+	findAndMatchKeypoints(image1, image2, true, true, "matches.png");
+
+	cout << endl << "================" << endl << endl;
+
+	findAndMatchKeypoints(image1, image2, false, true, "matches-1.png");
 
 	return EXIT_SUCCESS;
 }

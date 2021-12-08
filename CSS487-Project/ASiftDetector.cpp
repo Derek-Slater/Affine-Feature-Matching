@@ -21,7 +21,7 @@ using namespace std;
 
 ASiftDetector::ASiftDetector() { }
 
-void ASiftDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors)
+void const ASiftDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors)
 {
     keypoints.clear();
     descriptors = Mat(0, 128, CV_32F);
@@ -37,7 +37,7 @@ void ASiftDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints
     }
 }
 
-void ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
+void const ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
 {
     double t = pow(sqrt(2), tl - 1);
     for (int phi = 0; phi < 180; phi += 72.0 / t)
@@ -79,7 +79,7 @@ void ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoi
     }
 }
 
-void ASiftDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai)
+void const ASiftDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai)
 {
     int h = img.rows;
     int w = img.cols;

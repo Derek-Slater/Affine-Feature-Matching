@@ -19,11 +19,11 @@ class ASiftDetector
 	public:
 		ASiftDetector();
 
-		void detectAndCompute(const Mat& img, vector< KeyPoint >& keypoints, Mat& descriptors);
+		void const detectAndCompute(const Mat& img, vector< KeyPoint >& keypoints, Mat& descriptors);
 
 	private:
 		mutex keypointsMutex, descriptorsMutex;
 
-		void compute(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors);
-		void affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai);
+		void const computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors);
+		void const affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai);
 };
