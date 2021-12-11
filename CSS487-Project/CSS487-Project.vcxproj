@@ -144,10 +144,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ASiftDetector.cpp" />
+    <ClCompile Include="ABRISKDetector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ASiftDetector.h" />
+    <ClInclude Include="ABRISKDetector.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="image1.png" />

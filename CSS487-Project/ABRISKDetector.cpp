@@ -1,9 +1,13 @@
-// ASiftDetector.cpp
-// Author: Matt Sheckells, from http://www.mattsheckells.com/opencv-asift-c-implementation/
+// File: ABRISKDetector.cpp
+// 
+// This file provides an implementation for ABRISK, or Affine-BRISK, a keypoint detection
+// algorithm that is invariant to affine transformations and uses BRISK.
+// 
+// Author: Matt Sheckells: http://www.mattsheckells.com/opencv-asift-c-implementation/
 // Modified by: Derek Slater, Shakeel Khan
 
 // Misc. imports.
-#include "ASiftDetector.h"
+#include "ABRISKDetector.h"
 
 // STD imports.
 #include <iostream>
@@ -18,26 +22,49 @@ using namespace std;
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-
-ASiftDetector::ASiftDetector() { }
-
-void const ASiftDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors)
+// detectAndCompute: Find keypoints within the given image and computes their
+//                   descriptors.
+// Preconditions: None.
+// Postconditions: All keypoints found are stored in keypoints and their descriptors are
+//                 put in descriptors.
+void const ABRISKDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors)
 {
+    // Clear both data structures.
     keypoints.clear();
     descriptors = Mat(0, 128, CV_32F);
+
+    // If we're building the parallel version, we need an array for the threads.
+#ifdef PARALLELIZE
     thread threads[NUM_THREADS];
+#endif // PARALLELIZE
+
+    
     for (int tl = 1; tl < 6; tl++)
     {
-        threads[tl - 1] = thread(&ASiftDetector::computeTask, this, tl, cref(img), ref(keypoints), ref(descriptors));
+        // If we're building the parallel version, start a thread, otherwise, call
+        // computeTask directly.
+#ifdef PARALLELIZE
+        threads[tl - 1] = thread(&ABRISKDetector::computeTask, this, tl, cref(img), ref(keypoints), ref(descriptors));
+#else
+        computeTask(tl, img, keypoints, descriptors);
+#endif // PARALLELIZE
     }
 
+    // If we're building the parallel version, we need to join all our threads.
+#ifdef PARALLELIZE
     for (int i = 0; i < NUM_THREADS; i++)
     {
         threads[i].join();
     }
+#endif // PARALLELIZE
 }
 
-void const ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
+// computeTask: This is where we perform several affine transformations of the input
+//              image and for each of them find keypoints and compute their descriptors.
+// Preconditions: tl must range from 1-5.
+// Postconditions: The keypoints found will be put in keypoints and their descriptors are
+//                 put in descriptors.
+void const ABRISKDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
 {
     double t = pow(sqrt(2), tl - 1);
     for (int phi = 0; phi < 180; phi += 72.0 / t)
@@ -49,14 +76,8 @@ void const ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &
         img.copyTo(timg);
 
         affineSkew(t, phi, timg, mask, Ai);
-#if 0
-        Mat img_disp;
-        bitwise_and(mask, timg, img_disp);
-        namedWindow("Skew", WINDOW_AUTOSIZE);// Create a window for display.
-        imshow("Skew", img_disp);
-        waitKey(0);
-#endif
 
+        // Detect the kepoints and compute their descriptors.
         Ptr<BRISK> ptrBrisk = BRISK::create();
         ptrBrisk->detect(timg, kps, mask);
 
@@ -69,17 +90,25 @@ void const ASiftDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &
             kps[i].pt.x = kpt_t.at<float>(0, 0);
             kps[i].pt.y = kpt_t.at<float>(1, 0);
         }
+
+        // Store our keypoints.
         keypointsMutex.lock();
         keypoints.insert(keypoints.end(), kps.begin(), kps.end());
         keypointsMutex.unlock();
 
+        // Along with their descriptors.
         descriptorsMutex.lock();
         descriptors.push_back(desc);
         descriptorsMutex.unlock();
     }
 }
 
-void const ASiftDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai)
+// affineSkew: Performs an affine transformation according to the specified parameters.
+// Preconditions: img must be a valid grayscale (CV_8UC1) image.
+// Postconditions: Performs an affine transformation according to the specified
+//                 parameters to img. Also stores the inverse of the affine
+//                 transformation in Ai and the mask for the transformation into mask.
+void const ABRISKDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai)
 {
     int h = img.rows;
     int w = img.cols;
