@@ -30,7 +30,9 @@ class ABRISKDetector
 		// Preconditions: None.
 		// Postconditions: All keypoints found are stored in keypoints and their
 		//				   descriptors are put in descriptors.
-		void const detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors);
+		void const detectAndCompute(const Mat& img,
+									vector<KeyPoint>& keypoints,
+									Mat& descriptors);
 
 	private:
 		mutex keypointsMutex, descriptorsMutex;
@@ -41,7 +43,8 @@ class ABRISKDetector
 		// Preconditions: tl must range from 1-5.
 		// Postconditions: The keypoints found will be put in keypoints and their
 		//				   descriptors are put in descriptors.
-		void const computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors);
+		void const computeTask(int tl, const Mat &img,
+								vector<KeyPoint> &keypoints, Mat &descriptors);
 
 		// affineSkew: Performs an affine transformation according to the specified
 		//			   parameters.

@@ -22,12 +22,16 @@ using namespace std;
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+using namespace cv;
+
 // detectAndCompute: Find keypoints within the given image and computes their
 //                   descriptors.
 // Preconditions: None.
 // Postconditions: All keypoints found are stored in keypoints and their descriptors are
 //                 put in descriptors.
-void const ABRISKDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& keypoints, Mat& descriptors)
+void const ABRISKDetector::detectAndCompute(const Mat& img,
+                                            vector<KeyPoint>& keypoints,
+                                            Mat& descriptors)
 {
     // Clear both data structures.
     keypoints.clear();
@@ -44,7 +48,8 @@ void const ABRISKDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& ke
         // If we're building the parallel version, start a thread, otherwise, call
         // computeTask directly.
 #ifdef PARALLELIZE
-        threads[tl - 1] = thread(&ABRISKDetector::computeTask, this, tl, cref(img), ref(keypoints), ref(descriptors));
+        threads[tl - 1] = thread(&ABRISKDetector::computeTask, this,
+                                    tl, cref(img), ref(keypoints), ref(descriptors));
 #else
         computeTask(tl, img, keypoints, descriptors);
 #endif // PARALLELIZE
@@ -64,7 +69,8 @@ void const ABRISKDetector::detectAndCompute(const Mat& img, vector<KeyPoint>& ke
 // Preconditions: tl must range from 1-5.
 // Postconditions: The keypoints found will be put in keypoints and their descriptors are
 //                 put in descriptors.
-void const ABRISKDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors)
+void const ABRISKDetector::computeTask(int tl, const Mat &img,
+                                        vector<KeyPoint> &keypoints, Mat &descriptors)
 {
     double t = pow(sqrt(2), tl - 1);
     for (int phi = 0; phi < 180; phi += 72.0 / t)
@@ -108,7 +114,8 @@ void const ABRISKDetector::computeTask(int tl, const Mat &img, vector<KeyPoint> 
 // Postconditions: Performs an affine transformation according to the specified
 //                 parameters to img. Also stores the inverse of the affine
 //                 transformation in Ai and the mask for the transformation into mask.
-void const ABRISKDetector::affineSkew(double tilt, double phi, Mat& img, Mat& mask, Mat& Ai)
+void const ABRISKDetector::affineSkew(double tilt, double phi,
+                                        Mat& img, Mat& mask, Mat& Ai)
 {
     int h = img.rows;
     int w = img.cols;
@@ -138,7 +145,8 @@ void const ABRISKDetector::affineSkew(double tilt, double phi, Mat& img, Mat& ma
         Rect rect = boundingRect(tcorners);
         A = (Mat_<float>(2, 3) << c, -s, -rect.x, s, c, -rect.y);
 
-        warpAffine(img, img, A, Size(rect.width, rect.height), INTER_LINEAR, BORDER_REPLICATE);
+        warpAffine(img, img, A, Size(rect.width, rect.height),
+                    INTER_LINEAR, BORDER_REPLICATE);
     }
 
     if (tilt != 1.0)

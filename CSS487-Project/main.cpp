@@ -4,6 +4,9 @@
 // 
 // Authors: Derek Slater, Shakeel Khan
 
+// Misc. imports.
+#include "ABRISKDetector.h"		// ABRISK implementation.
+
 // STD imports.
 #include <iostream>
 #include <chrono>
@@ -19,9 +22,6 @@ using namespace std;
 #include <opencv2/imgproc.hpp>
 using namespace cv;
 
-// Misc. imports.
-#include "ABRISKDetector.h"		// ABRISK implementation.
-
 // Constants.
 const string IMAGE_1_FILENAME = "image1.png";
 const string IMAGE_2_FILENAME = "image2.png";
@@ -30,12 +30,17 @@ const int BEST_MATCHES_TO_DISPLAY = 75;
 
 const float DISTANCE_RATIO_THRESHOLD = 0.7f;
 
+// Global variables.
 ABRISKDetector abd;
 
-// BRISKDetectAndCompute: Performs keypoint detection and descriptor calculation via BRISK.
+// BRISKDetectAndCompute: Performs keypoint detection and descriptor calculation via
+//						  BRISK.
 // Preconditions: Image passed in is a Mat that represents a grayscale image.
 // Postconditions: Keypoints and descriptors will be filled in.
-void BRISKDetectAndCompute(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors) {
+void BRISKDetectAndCompute(const Mat& image,
+							vector<KeyPoint>& keypoints,
+							Mat& descriptors)
+{
 	Ptr<BRISK> ptrBrisk = BRISK::create();
 	ptrBrisk->detect(image, keypoints);
 	ptrBrisk->compute(image, keypoints, descriptors);
@@ -43,25 +48,34 @@ void BRISKDetectAndCompute(const Mat& image, vector<KeyPoint>& keypoints, Mat& d
 
 // extractBestMatches: Uses Lowe's ratio test to get the best matches.
 // Preconditions: vector<vector<DMatch>> matches contains matches between images.
-// Postconditions: the best matches from matches will be pushed into bestMatches,
-// and the ratioSum will contain the sum of all the distance ratios between matches.
-void extractBestMatches(const vector<vector<DMatch>>& matches, vector<DMatch> &bestMatches, float &ratioSum) {
-	for (int i = 0; i < matches.size(); i++) {
+// Postconditions: the best matches from matches will be pushed into bestMatches, and the
+//				   ratioSum will contain the sum of all the distance ratios between
+//				   matches.
+void extractBestMatches(const vector<vector<DMatch>>& matches,
+						vector<DMatch> &bestMatches,
+						float &ratioSum)
+{
+	for (int i = 0; i < matches.size(); i++)
+	{
 		float distanceRatio = matches[i][0].distance / matches[i][1].distance;
-		if (distanceRatio <= DISTANCE_RATIO_THRESHOLD) {
+		if (distanceRatio <= DISTANCE_RATIO_THRESHOLD)
+		{
 			bestMatches.push_back(matches[i][0]);
 			ratioSum += distanceRatio;
 		}
 	}
 }
 
-// trimBestMatches: Trims bestMatches so as to not clutter the display for too many matches.
+// trimBestMatches: Trims bestMatches so as to not clutter the display for too many
+//				    matches.
 // Preconditions: bestMatches is not empty.
 // Postconditions: bestMatches will only contain at most BEST_MATCHES_TO_DISPLAY entries.
-void trimBestMatches(vector<DMatch>& bestMatches) {
+void trimBestMatches(vector<DMatch>& bestMatches)
+{
 	sort(bestMatches.begin(), bestMatches.end());
 	vector<DMatch>::iterator end = bestMatches.end();
-	if (bestMatches.size() > BEST_MATCHES_TO_DISPLAY) {
+	if (bestMatches.size() > BEST_MATCHES_TO_DISPLAY)
+	{
 		end = bestMatches.begin() + BEST_MATCHES_TO_DISPLAY;
 	}
 	bestMatches = vector<DMatch>(bestMatches.begin(), end);
@@ -72,7 +86,10 @@ void trimBestMatches(vector<DMatch>& bestMatches) {
 //				  abrisk to true, or regular BRISK by setting abrisk to false.
 // Postconditions: Any keypoints found will be put in keypoints and their corresponding
 //				   descriptor will be places in descriptors.
-void findKeypoints(const Mat &img, vector<KeyPoint> &keypoints, Mat &descriptors, bool abrisk)
+void findKeypoints(const Mat &img,
+					vector<KeyPoint> &keypoints,
+					Mat &descriptors,
+					bool abrisk)
 {
 	if (abrisk)
 	{
@@ -100,8 +117,10 @@ void matchDescriptors(Mat &descriptors1, Mat &descriptors2,
 	else
 	{
 		FlannBasedMatcher matcher;
-		descriptors1.convertTo(descriptors1, CV_32F);		// Convert to CV_32F to work with FLANN.
-		descriptors2.convertTo(descriptors2, CV_32F);		// Convert to CV_32F to work with FLANN.
+		descriptors1.convertTo(descriptors1, CV_32F);	// Convert to CV_32F to work
+														// with FLANN.
+		descriptors2.convertTo(descriptors2, CV_32F);	// Convert to CV_32F to work
+														// with FLANN.
 		matcher.knnMatch(descriptors1, descriptors2, matches, 2);
 	}
 }
@@ -140,7 +159,8 @@ void showAndSave(const Mat &image1, const vector<KeyPoint> keypoints1,
 //				  filename for the resulting image (fileName).
 // Postconditions: The resulting image with the drawn matches will be saved to disk with
 //				   the specified filename.
-void findAndMatchKeypoints(const Mat& image1, const Mat& image2, bool abrisk, bool bruteForce, string fileName)
+void findAndMatchKeypoints(const Mat& image1, const Mat& image2,
+							bool abrisk, bool bruteForce, string fileName)
 {
 	// Find keypoints and descriptors.
 	Mat descriptors1, descriptors2;
