@@ -10,19 +10,10 @@
 #include "ABRISKDetector.h"
 
 // STD imports.
-#include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <thread>
 
 using namespace std;
-
-// OpenCV imports.
-#include <opencv2/features2d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-using namespace cv;
 
 // detectAndCompute: Find keypoints within the given image and computes their
 //                   descriptors.

@@ -145,9 +145,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ABRISKDetector.cpp" />
+    <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ABRISKDetector.h" />
+    <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="image1.png" />

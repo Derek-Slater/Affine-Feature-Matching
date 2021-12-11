@@ -7,10 +7,13 @@
 // Author: Matt Sheckells: http://www.mattsheckells.com/opencv-asift-c-implementation/
 // Modified by: Derek Slater, Shakeel Khan
 
+#pragma once
+
 #define NUM_THREADS 5
 #define PARALLELIZE
 
 // STD imports.
+#include <iostream>
 #include <vector>
 #include <thread>
 
@@ -19,6 +22,8 @@ using namespace std;
 // OpenCV imports.
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace cv;
 
